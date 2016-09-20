@@ -48,8 +48,9 @@ def handler(event, context):
     instance_id = event['detail']['instance-id']
     instance = ec2.Instance(instance_id)
     instance_ip = instance.private_ip_address
-    instance_dns_name = instance.private_dns_name
+    instance_ip_pub = instance.public_ip_address
     instance_name = search(instance.tags, 'Name')
+    instance_pub_name = search(instance.tags, 'Public Name')
     instance_ip_rev = reverse(ipaddress.ip_address(unicode(instance_ip)))
 
     print("Processing: {0}".format(instance_id))
@@ -112,6 +113,29 @@ def handler(event, context):
         ]
     }
 
+    if instance_ip_pub:
+        
+        if not instance_pub_name:
+            instance_pub_name = instance_name
+
+        dns_changes_pub = {
+            'Changes': [
+                {
+                    'Action': 'UPSERT',
+                    'ResourceRecordSet': {
+                        'Name': "{0}.{1}.".format(instance_pub_name, HOSTED_PUB_ZONE_NAME),
+                        'Type': 'A',
+                        'ResourceRecords': [
+                            {
+                                'Value': instance_ip_pub
+                            }
+                        ],
+                        'TTL': 300
+                    }
+                }
+            ]
+        }
+
     print("Updating Route53 to create:")
     print("{0}.private.{1}. IN A {2}".format(instance_name, HOSTED_PUB_ZONE_NAME, instance_ip))
     print("{0}.{1}. IN A {2}".format(instance_name, HOSTED_PRIV_ZONE_NAME, instance_ip))
@@ -132,4 +156,9 @@ def handler(event, context):
         ChangeBatch=dns_changes_priv_rev
     )
 
-    return {'status_pub_prv':response['ChangeInfo']['Status'], 'status':response_priv['ChangeInfo']['Status'], 'status_rev':response_rev['ChangeInfo']['Status']}
+    response_pub = route53.change_resource_record_sets(
+        HostedZoneId=HOSTED_PUB_ZONE_ID,
+        ChangeBatch=dns_changes_pub
+    )
+
+    return {'status_pub_prv':response_pub_priv['ChangeInfo']['Status'], 'status_priv':response_priv['ChangeInfo']['Status'], 'status_rev':response_rev['ChangeInfo']['Status'], 'status_pub':response_pub['ChangeInfo']['Status']}
