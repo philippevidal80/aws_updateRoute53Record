@@ -143,6 +143,11 @@ def handler(event, context):
 
         print("{0}.{1}. IN A {2}".format(instance_pub_name, HOSTED_PUB_ZONE_NAME, instance_ip_pub))
 
+        response_pub = route53.change_resource_record_sets(
+        HostedZoneId=HOSTED_PUB_ZONE_ID,
+        ChangeBatch=dns_changes_pub
+        )
+
     response_pub_priv = route53.change_resource_record_sets(
         HostedZoneId=HOSTED_PUB_ZONE_ID,
         ChangeBatch=dns_changes_priv_pub
@@ -158,9 +163,4 @@ def handler(event, context):
         ChangeBatch=dns_changes_priv_rev
     )
 
-    response_pub = route53.change_resource_record_sets(
-        HostedZoneId=HOSTED_PUB_ZONE_ID,
-        ChangeBatch=dns_changes_pub
-    )
-
-    return {'status_pub_prv':response_pub_priv['ChangeInfo']['Status'], 'status_priv':response_priv['ChangeInfo']['Status'], 'status_rev':response_rev['ChangeInfo']['Status'], 'status_pub':response_pub['ChangeInfo']['Status']}
+    return {'status_pub_prv':response_pub_priv['ChangeInfo']['Status'], 'status_priv':response_priv['ChangeInfo']['Status'], 'status_rev':response_rev['ChangeInfo']['Status'], if instance_ip_pub: 'status_pub':response_pub['ChangeInfo']['Status']}
