@@ -113,6 +113,11 @@ def handler(event, context):
         ]
     }
 
+    print("Updating Route53 to create:")
+    print("{0}.private.{1}. IN A {2}".format(instance_name, HOSTED_PUB_ZONE_NAME, instance_ip))
+    print("{0}.{1}. IN A {2}".format(instance_name, HOSTED_PRIV_ZONE_NAME, instance_ip))
+    print("{0} IN PTR {1}.{2}.".format(instance_ip_rev, instance_name, HOSTED_PRIV_ZONE_NAME))
+
     if instance_ip_pub:
         
         if not instance_pub_name:
@@ -136,10 +141,7 @@ def handler(event, context):
             ]
         }
 
-    print("Updating Route53 to create:")
-    print("{0}.private.{1}. IN A {2}".format(instance_name, HOSTED_PUB_ZONE_NAME, instance_ip))
-    print("{0}.{1}. IN A {2}".format(instance_name, HOSTED_PRIV_ZONE_NAME, instance_ip))
-    print("{0} IN PTR {1}.{2}.".format(instance_ip_rev, instance_name, HOSTED_PRIV_ZONE_NAME))
+        print("{0}.{1}. IN A {2}".format(instance_pub_name, HOSTED_PUB_ZONE_NAME, instance_ip_pub))
 
     response_pub_priv = route53.change_resource_record_sets(
         HostedZoneId=HOSTED_PUB_ZONE_ID,
