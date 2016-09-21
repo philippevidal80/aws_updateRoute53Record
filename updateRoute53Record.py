@@ -53,7 +53,7 @@ def handler(event, context):
     instance_pub_name = search(instance.tags, 'Public Name')
     instance_ip_rev = reverse(ipaddress.ip_address(unicode(instance_ip)))
 
-    print("Processing: {0}".format(instance_id))
+    print("Processing: {0} | {1}".format(instance_id, instance_name))
 
     if not is_valid_hostname("{0}".format(instance_name)):
         print("Invalid hostname! No changes made.")
@@ -118,6 +118,21 @@ def handler(event, context):
     print("{0}.{1}. IN A {2}".format(instance_name, HOSTED_PRIV_ZONE_NAME, instance_ip))
     print("{0} IN PTR {1}.{2}.".format(instance_ip_rev, instance_name, HOSTED_PRIV_ZONE_NAME))
 
+    response_pub_priv = route53.change_resource_record_sets(
+        HostedZoneId=HOSTED_PUB_ZONE_ID,
+        ChangeBatch=dns_changes_priv_pub
+    )
+
+    response_priv = route53.change_resource_record_sets(
+        HostedZoneId=HOSTED_PRIV_ZONE_ID,
+        ChangeBatch=dns_changes_priv
+    )
+
+    response_rev = route53.change_resource_record_sets(
+        HostedZoneId=HOSTED_REV_PRIV_ZONE_ID,
+        ChangeBatch=dns_changes_priv_rev
+    )
+
     if instance_ip_pub:
         
         if not instance_pub_name:
@@ -148,19 +163,8 @@ def handler(event, context):
         ChangeBatch=dns_changes_pub
         )
 
-    response_pub_priv = route53.change_resource_record_sets(
-        HostedZoneId=HOSTED_PUB_ZONE_ID,
-        ChangeBatch=dns_changes_priv_pub
-    )
+        return {'status_pub_prv':response_pub_priv['ChangeInfo']['Status'], 'status_priv':response_priv['ChangeInfo']['Status'], 'status_rev':response_rev['ChangeInfo']['Status'], 'status_pub':response_pub['ChangeInfo']['Status']}
 
-    response_priv = route53.change_resource_record_sets(
-        HostedZoneId=HOSTED_PRIV_ZONE_ID,
-        ChangeBatch=dns_changes_priv
-    )
+    else:
 
-    response_rev = route53.change_resource_record_sets(
-        HostedZoneId=HOSTED_REV_PRIV_ZONE_ID,
-        ChangeBatch=dns_changes_priv_rev
-    )
-
-    return {'status_pub_prv':response_pub_priv['ChangeInfo']['Status'], 'status_priv':response_priv['ChangeInfo']['Status'], 'status_rev':response_rev['ChangeInfo']['Status'], if instance_ip_pub: 'status_pub':response_pub['ChangeInfo']['Status']}
+        return {'status_pub_prv':response_pub_priv['ChangeInfo']['Status'], 'status_priv':response_priv['ChangeInfo']['Status'], 'status_rev':response_rev['ChangeInfo']['Status']}
